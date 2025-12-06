@@ -18,7 +18,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Allow authenticated users to read predictions.
+    // Allow any authenticated user to read predictions from a user's subcollection
+    match /users/{userId}/predictions/{predictionId} {
+        allow read: if request.auth != null;
+        allow write: if false;
+    }
+
+    // Allow authenticated users to read predictions. (Legacy path)
     match /predictions/{deviceId}/samples/{sampleId} {
       allow read: if request.auth != null;
       allow write: if false; // Restrict writes to backend processes.
