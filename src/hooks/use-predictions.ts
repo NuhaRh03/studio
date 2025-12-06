@@ -4,51 +4,117 @@ import { useState, useEffect } from 'react';
 import { firestore } from '@/lib/firebase';
 import { collection, query, onSnapshot, orderBy, limit } from 'firebase/firestore';
 
-export interface Prediction {
+export type AlertLevel = "high" | "medium" | "low";
+
+export interface PredictionAlert {
   id: string;
-  state: string;
-  prob: number;
+  title: string;
+  message: string;
+  level: AlertLevel;
   timestamp: number;
 }
 
-export function usePredictions(deviceId: string, count: number) {
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
+interface PredictionDoc {
+  timestamp_ms?: number;
+  prediction?: {
+    states?: {
+      [name: string]: { label: number; prob: number };
+    };
+    emotion?: {
+      class_index?: number;
+      label?: string;
+      probs?: { [name: string]: number };
+    };
+  }
+}
+
+function capitalize(s: string) {
+    if (!s) return s;
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function predictionToAlert(id: string, data: PredictionDoc): PredictionAlert | null {
+  const ts = data.timestamp_ms ?? 0;
+  const states = data.prediction?.states ?? {};
+  const emotionLabel = data.prediction?.emotion?.label ?? "Unknown";
+
+  const activeStates: { name: string; prob: number }[] = [];
+  Object.entries(states).forEach(([name, v]) => {
+    if (v && v.label === 1) {
+      activeStates.push({ name, prob: v.prob ?? 0 });
+    }
+  });
+
+  let level: AlertLevel = "low";
+  let title = "Stable State";
+  const critStates = ["migraine", "headache"];
+  const stressStates = ["stress", "fatigue"];
+
+  const hasCritical = activeStates.some(
+    (s) => critStates.includes(s.name) && s.prob >= 0.6
+  );
+  const hasMedium = activeStates.some(
+    (s) =>
+      (critStates.includes(s.name) && s.prob >= 0.4) ||
+      (stressStates.includes(s.name) && s.prob >= 0.5)
+  );
+
+  if (hasCritical) {
+    level = "high";
+    title = "High Risk of Migraine / Headache";
+  } else if (hasMedium) {
+    level = "medium";
+    title = "Stress / Fatigue Detected";
+  } else if (activeStates.length > 0) {
+    level = "low";
+    title = "Weak Signals Detected";
+  } else {
+    // We can filter these out later if we don't want to show them
+    return null;
+  }
+
+  const stateSummary =
+    activeStates.length > 0
+      ? activeStates
+          .map(
+            (s) => `${capitalize(s.name)}: ${(s.prob * 100).toFixed(0)}%`
+          )
+          .join(" • ")
+      : "No critical states detected.";
+
+  const message = `Predicted Emotion: ${emotionLabel}. ${stateSummary}`;
+
+  return { id, title, message, level, timestamp: ts };
+}
+
+// Hardcoded to match the python script
+const DEVICE_ID = 'device1';
+
+export function usePredictions(count: number) {
+  const [predictions, setPredictions] = useState<PredictionAlert[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!firestore || !deviceId) {
+    if (!firestore || !DEVICE_ID) {
       setLoading(false);
       return;
     }
 
-    const samplesRef = collection(firestore, 'predictions', deviceId, 'samples');
+    const samplesRef = collection(firestore, 'predictions', DEVICE_ID, 'samples');
     const q = query(samplesRef, orderBy('timestamp_ms', 'desc'), limit(count));
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const newPredictions: Prediction[] = [];
+        const newPredictions: PredictionAlert[] = [];
         snapshot.forEach((doc) => {
-          const data = doc.data();
-          const states = data.prediction?.states;
-          if (states) {
-            Object.entries(states).forEach(([state, details]) => {
-              const stateDetails = details as { label: number; prob: number };
-              if (stateDetails.label === 1 && stateDetails.prob > 0.65) {
-                newPredictions.push({
-                  id: `${doc.id}-${state}`,
-                  state: state,
-                  prob: stateDetails.prob,
-                  timestamp: data.timestamp_ms,
-                });
-              }
-            });
+          const data = doc.data() as PredictionDoc;
+          const alertItem = predictionToAlert(doc.id, data);
+          if (alertItem) {
+            newPredictions.push(alertItem);
           }
         });
         
-        // Sort by probability (highest first) then by timestamp
-        newPredictions.sort((a, b) => b.prob - a.prob || b.timestamp - a.timestamp);
-
         setPredictions(newPredictions);
         setLoading(false);
       },
@@ -59,7 +125,7 @@ export function usePredictions(deviceId: string, count: number) {
     );
 
     return () => unsubscribe();
-  }, [deviceId, count]);
+  }, [count]);
 
   return { predictions, loading };
 }
