@@ -15,8 +15,8 @@ export interface UserProfile {
 
 // NOTE: We are using a hardcoded user and document ID for demonstration purposes.
 // In a real application, this should be dynamic based on the logged-in user.
-const USER_ID = '25zoRah4wZsAKzLeZJpL';
-const PROFILE_DOC_ID = 'omayma.ouhsain@example.com';
+const USER_COLLECTION = '25zoRah4wZsAKzLeZJpL';
+const PROFILE_DOC_ID = 'realtime_data';
 
 export function useUserProfile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -29,7 +29,7 @@ export function useUserProfile() {
       return;
     }
 
-    const docRef = doc(firestore, USER_ID, 'realtime_data', PROFILE_DOC_ID);
+    const docRef = doc(firestore, USER_COLLECTION, PROFILE_DOC_ID);
     
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
