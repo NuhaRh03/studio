@@ -1,0 +1,19 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow public read access to the user profile document for demonstration.
+    // In a production app, you would restrict this to authenticated users.
+    match /25zoRah4wZsAKzLeZJpL/realtime_data {
+      allow read: if true;
+      allow write: if false; // Keep writes restricted
+    }
+
+    // Rules for other collections can be added here.
+    // By default, all other paths are denied.
+    match /predictions/{docId} {
+      allow read, write: if true; // Allow read/write for predictions
+    }
+  }
+}
