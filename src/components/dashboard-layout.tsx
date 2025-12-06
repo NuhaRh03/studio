@@ -22,6 +22,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
+import { PredictionListener } from './prediction-listener';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
@@ -78,6 +79,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <PredictionListener />
             {children}
         </main>
       </div>
@@ -113,7 +115,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <header className="sticky top-0 z-10 flex h-16 items-center justify-end gap-4 border-b bg-background px-6">
             <ThemeToggle />
           </header>
-          <SidebarInset>{children}</SidebarInset>
+          <SidebarInset>
+            <PredictionListener />
+            {children}
+          </SidebarInset>
         </div>
       </div>
     </SidebarProvider>
