@@ -4,7 +4,7 @@ import React from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { DevicePythonDataPoint } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { ChartTooltipContent } from './ui/chart';
+import { ChartTooltipContent, ChartContainer, type ChartConfig } from './ui/chart';
 
 type ChartData = {
   time: string;
@@ -20,14 +20,21 @@ interface HistoricalChartProps {
 }
 
 export default function HistoricalChart({ title, data, dataKey, color, yAxisLabel }: HistoricalChartProps) {
+  const chartConfig = {
+    [dataKey]: {
+      label: title,
+      color: color,
+    },
+  } satisfies ChartConfig;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={250}>
-          <AreaChart data={data}>
+        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+          <AreaChart data={data} accessibilityLayer>
             <defs>
               <linearGradient id={`color_${dataKey}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={color} stopOpacity={0.8} />
@@ -50,7 +57,7 @@ export default function HistoricalChart({ title, data, dataKey, color, yAxisLabe
               label={{ value: yAxisLabel, angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: 'hsl(var(--muted-foreground))' }, dy: 40 }}
             />
             <Tooltip
-                content={<ChartTooltipContent />}
+                content={<ChartTooltipContent indicator="dot" />}
                 cursor={{ fill: 'hsl(var(--accent) / 0.1)' }}
             />
             <Area
@@ -62,7 +69,7 @@ export default function HistoricalChart({ title, data, dataKey, color, yAxisLabe
               strokeWidth={2}
             />
           </AreaChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </CardContent>
     </Card>
   );
