@@ -6,6 +6,8 @@ import { firestore } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle } from 'lucide-react';
 
+const DEVICE_ID = 'device1';
+
 export function PredictionListener() {
   const { toast } = useToast();
 
@@ -15,10 +17,11 @@ export function PredictionListener() {
       return;
     }
 
-    const predictionsRef = collection(firestore, 'predictions');
+    const samplesRef = collection(firestore, 'predictions', DEVICE_ID, 'samples');
+    // Listen for documents created in the last 2 seconds to avoid showing old alerts on load
     const q = query(
-      predictionsRef,
-      where('timestamp', '>', Timestamp.now())
+      samplesRef,
+      where('timestamp_ms', '>', Date.now() - 2000)
     );
 
     const unsubscribe = onSnapshot(
@@ -27,25 +30,33 @@ export function PredictionListener() {
         snapshot.docChanges().forEach((change) => {
           if (change.type === 'added') {
             const data = change.doc.data();
-            const { prediction, probability } = data;
-
-            toast({
-              title: (
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-yellow-500" />
-                  <span className="font-bold">Health Alert</span>
-                </div>
-              ),
-              description: `${prediction} risk detected. Probability: ${(
-                probability * 100
-              ).toFixed(0)}%`,
-              variant: 'default',
-            });
+            const states = data.prediction?.states;
+            if (states) {
+              Object.entries(states).forEach(([state, details]) => {
+                const stateDetails = details as { label: number; prob: number };
+                
+                // Only show toast for high-probability events
+                if (stateDetails.label === 1 && stateDetails.prob > 0.8) {
+                    toast({
+                        title: (
+                            <div className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5 text-yellow-500" />
+                            <span className="font-bold capitalize">{state} Alert</span>
+                            </div>
+                        ),
+                        description: `A high risk of ${state} has been detected. Probability: ${(
+                            stateDetails.prob * 100
+                        ).toFixed(0)}%`,
+                        variant: 'default',
+                    });
+                }
+              });
+            }
           }
         });
       },
       (error) => {
-        console.error('Error listening to predictions:', error);
+        console.error('Error listening to predictions for toasts:', error);
       }
     );
 
