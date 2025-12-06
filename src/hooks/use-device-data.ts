@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { database } from '@/lib/firebase';
-import { ref, onChildAdded, query, limitToLast, off, get, child } from 'firebase/database';
+import { ref, onChildAdded, query, limitToLast, off, get } from 'firebase/database';
 import type { DevicePythonDataPoint } from '@/types';
+import { useAuth } from './use-auth';
 
 function generateMockDataPoint(lastPoint?: DevicePythonDataPoint): DevicePythonDataPoint {
   const now = Date.now() / 1000;
@@ -31,6 +32,7 @@ function generateMockDataPoint(lastPoint?: DevicePythonDataPoint): DevicePythonD
 }
 
 export function useDeviceData(limit: number): DevicePythonDataPoint[] {
+  const { user } = useAuth();
   const [data, setData] = useState<DevicePythonDataPoint[]>([]);
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -45,9 +47,15 @@ export function useDeviceData(limit: number): DevicePythonDataPoint[] {
       }, 2000);
       return () => clearInterval(interval);
     }
+    
+    if (!user) {
+        setData([]);
+        return;
+    }
 
-    // Firebase is configured, use real data
-    const deviceRef = ref(database, 'devices/device_python');
+    // Use user's UID to reference their device data
+    const deviceId = user.uid;
+    const deviceRef = ref(database, `devices/${deviceId}`);
     const dataQuery = query(deviceRef, limitToLast(limit));
     let initialDataLoaded = false;
 
@@ -60,12 +68,10 @@ export function useDeviceData(limit: number): DevicePythonDataPoint[] {
       setData(prevData => {
         if (prevData.some(p => p.id === id)) return prevData;
         const newState = [...prevData, newDataPoint];
-        // Ensure the array does not exceed the limit
         return newState.length > limit ? newState.slice(newState.length - limit) : newState;
       });
     };
 
-    // First, fetch the initial last 'limit' items
     get(dataQuery).then((snapshot) => {
         const initialData: DevicePythonDataPoint[] = [];
         if (snapshot.exists()) {
@@ -78,22 +84,19 @@ export function useDeviceData(limit: number): DevicePythonDataPoint[] {
         }
         initialDataLoaded = true;
 
-        // After fetching initial data, attach the 'onChildAdded' listener
-        // for real-time updates.
         onChildAdded(query(deviceRef, limitToLast(1)), (snapshot) => {
-            // Only process new children added after initial load
             if (initialDataLoaded && !dataRef.current.some(p => p.id === snapshot.key)) {
                 handleNewData(snapshot);
             }
         });
     });
 
-
-    // Cleanup listener on component unmount
     return () => {
-      off(dataQuery);
+      if(dataQuery) {
+        off(dataQuery);
+      }
     };
-  }, [limit]);
+  }, [limit, user]);
 
   return data;
 }

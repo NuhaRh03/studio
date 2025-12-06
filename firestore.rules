@@ -4,11 +4,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Allow authenticated users to read from the 'data' subcollection of any device document.
-    // This is more specific and correctly matches the application's query path.
-    match /devices/{deviceId}/data/{docId} {
-      allow read: if request.auth != null;
-      allow write: if false; // Keep writes restricted for now.
+    // Allow users to read their own data from the 'data' subcollection.
+    // The {userId} wildcard must match the uid of the authenticated user.
+    match /devices/{userId}/data/{docId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Keep writes restricted.
     }
 
     // Allow authenticated users to read predictions.
