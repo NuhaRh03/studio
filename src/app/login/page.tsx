@@ -1,0 +1,99 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Logo } from '@/components/icons';
+import { Loader2 } from 'lucide-react';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      // NOTE: Using a hardcoded test user for demonstration purposes.
+      // Replace with `signInWithEmailAndPassword(auth, email, password)` for real users.
+      await signInWithEmailAndPassword(auth, 'test@example.com', 'password123');
+      router.push('/');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+            <div className="flex justify-center items-center mb-4">
+                <Logo className="h-8 w-8 text-primary" />
+            </div>
+          <CardTitle className="text-2xl">BioMind Insights</CardTitle>
+          <CardDescription>
+            Enter your credentials to access your dashboard.
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleLogin}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+             <p className="text-xs text-center text-muted-foreground pt-2">
+                Use <span className='font-semibold'>test@example.com</span> and <span className='font-semibold'>password123</span> to log in.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign In
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
+  );
+}

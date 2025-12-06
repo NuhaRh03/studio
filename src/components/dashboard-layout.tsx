@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -15,13 +15,14 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/icons';
-import { Home, BarChart3, ShieldAlert, FileText, Settings } from 'lucide-react';
+import { Home, BarChart3, ShieldAlert, FileText, Settings, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { PredictionListener } from './prediction-listener';
+import { useAuth } from '@/hooks/use-auth';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
@@ -38,6 +39,26 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isMobile = useIsMobile();
   const [open, setOpen] = React.useState(false);
+  const { user, loading, logout } = useAuth();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (!loading && !user && pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [user, loading, pathname, router]);
+
+  if (pathname === '/login') {
+    return <>{children}</>;
+  }
+  
+  if (loading) {
+    return <div className="flex h-screen w-full items-center justify-center">Loading...</div>
+  }
+
+  if (!user) {
+    return null;
+  }
 
   if (isMobile) {
     return (
@@ -86,6 +107,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         {item.label}
                     </Link>
                 ))}
+                 <button
+                    onClick={() => {
+                        logout();
+                        setOpen(false);
+                    }}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
               </nav>
             </SheetContent>
           </Sheet>
@@ -143,6 +174,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         </Link>
                     </SidebarMenuItem>
                 ))}
+                <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => logout()}>
+                      <div>
+                        <LogOut />
+                        <span>Logout</span>
+                      </div>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>

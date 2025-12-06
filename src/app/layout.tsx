@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
+import { AuthProvider } from '@/hooks/use-auth';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -27,8 +28,10 @@ export default function RootLayout({
       </head>
       <body className={cn('min-h-screen bg-background font-sans antialiased', inter.variable)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <DashboardLayout>{children}</DashboardLayout>
-          <Toaster />
+          <AuthProvider>
+            <DashboardLayout>{children}</DashboardLayout>
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
