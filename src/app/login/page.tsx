@@ -30,9 +30,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      // NOTE: Using a hardcoded test user for demonstration purposes.
-      // Replace with `signInWithEmailAndPassword(auth, email, password)` for real users.
-      await signInWithEmailAndPassword(auth, 'test@example.com', 'password123');
+      await signInWithEmailAndPassword(auth, email, password);
       router.push('/');
     } catch (error: any) {
       toast({
@@ -82,9 +80,6 @@ export default function LoginPage() {
                 disabled={loading}
               />
             </div>
-             <p className="text-xs text-center text-muted-foreground pt-2">
-                Use <span className='font-semibold'>test@example.com</span> and <span className='font-semibold'>password123</span> to log in.
-            </p>
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={loading}>
