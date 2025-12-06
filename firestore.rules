@@ -4,22 +4,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Allow authenticated users to read device data.
-    // In a production app, you would restrict this to the user who owns the device.
-    match /devices/{deviceId}/{subcollection}/{docId} {
+    // Allow authenticated users to read from the 'data' subcollection of any device document.
+    // This is more specific and correctly matches the application's query path.
+    match /devices/{deviceId}/data/{docId} {
       allow read: if request.auth != null;
-      allow write: if false; // Keep writes restricted
-    }
-
-    // Allow authenticated users to read the realtime data stream for the dashboard
-    match /devices/device_python/{any_child=**} {
-      allow read: if request.auth != null;
+      allow write: if false; // Keep writes restricted for now.
     }
 
     // Allow authenticated users to read predictions.
-    match /predictions/{docId} {
+    match /predictions/{predictionId} {
       allow read: if request.auth != null;
-      allow write: if false; // Restrict writes to backend processes
+      allow write: if false; // Restrict writes to backend processes.
     }
   }
 }
