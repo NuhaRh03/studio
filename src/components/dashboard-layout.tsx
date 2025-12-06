@@ -12,11 +12,10 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarInset,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/icons';
-import { Home, BarChart3, ShieldAlert, FileText } from 'lucide-react';
+import { Home, BarChart3, ShieldAlert, FileText, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -30,6 +29,10 @@ const navItems = [
   { href: '/risk-prediction', icon: ShieldAlert, label: 'Risk Prediction' },
   { href: '/report', icon: FileText, label: 'Session Report' },
 ];
+
+const bottomNavItems = [
+    { href: '/settings', icon: Settings, label: 'Settings' },
+]
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -47,7 +50,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left">
+            <SheetContent side="left" className="flex flex-col">
               <nav className="grid gap-6 text-lg font-medium">
                 <Link href="/" className="flex items-center gap-2 text-lg font-semibold mb-4" onClick={() => setOpen(false)}>
                   <Logo className="h-6 w-6 text-primary" />
@@ -66,6 +69,22 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     <item.icon className="h-4 w-4" />
                     {item.label}
                   </Link>
+                ))}
+              </nav>
+              <nav className="mt-auto grid gap-6 text-lg font-medium">
+                {bottomNavItems.map((item) => (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                        pathname === item.href && "text-primary bg-muted"
+                        )}
+                    >
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                    </Link>
                 ))}
               </nav>
             </SheetContent>
@@ -89,7 +108,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <Sidebar className="border-r">
+        <Sidebar className="border-r flex flex-col">
           <SidebarHeader className="flex items-center gap-2 p-4">
             <Logo className="h-7 w-7 text-primary" />
             <span className="text-lg font-semibold whitespace-nowrap">BioMind Insights</span>
@@ -98,16 +117,32 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <Link href={item.href} passHref>
+                  <Link href={item.href}>
                     <SidebarMenuButton asChild isActive={pathname === item.href}>
-                      <a>
+                      <div>
                         <item.icon />
                         <span>{item.label}</span>
-                      </a>
+                      </div>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarContent>
+           <SidebarContent className="mt-auto">
+            <SidebarMenu>
+                {bottomNavItems.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                        <Link href={item.href}>
+                            <SidebarMenuButton asChild isActive={pathname === item.href}>
+                            <div>
+                                <item.icon />
+                                <span>{item.label}</span>
+                            </div>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>
