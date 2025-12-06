@@ -1,19 +1,23 @@
-import { initializeApp, getApps, type FirebaseOptions } from 'firebase/app';
-import { getDatabase, type Database } from 'firebase/database';
-import { getFirestore, type Firestore } from 'firebase/firestore';
+// Import the functions you need from the SDKs you need
+import { initializeApp, getApps } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import { getAuth } from "firebase/auth";
+import { getDatabase, type Database } from "firebase/database";
+import { getFirestore, type Firestore } from "firebase/firestore";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
-// IMPORTANT: Replace with your own Firebase project configuration.
-// You can get this from the Firebase console:
-// Project Settings > General > Your apps > Web app > Firebase SDK snippet > Config
-const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+export const firebaseConfig = {
+  apiKey: "AIzaSyBk-CiP1Qf35wpUx1RXq_KZxGve58PBY8o",
+  authDomain: "heartguard-cfc48.firebaseapp.com",
+  databaseURL: "https://heartguard-cfc48-default-rtdb.firebaseio.com",
+  projectId: "heartguard-cfc48",
+  storageBucket: "heartguard-cfc48.firebasestorage.app",
+  messagingSenderId: "169173920801",
+  appId: "1:169173920801:web:63427b863d444f54ac8760",
+  measurementId: "G-VXX3NBGFHY",
 };
 
 // Initialize Firebase
@@ -21,13 +25,15 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 
 let database: Database | null = null;
 let firestore: Firestore | null = null;
+let analytics;
 
-// The NEXT_PUBLIC_FIREBASE_PROJECT_ID is used as a flag to determine
-// if the Firebase config is properly set up.
-if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
+if (firebaseConfig.projectId) {
   try {
     database = getDatabase(app);
     firestore = getFirestore(app);
+    if (typeof window !== 'undefined') {
+      analytics = getAnalytics(app);
+    }
   } catch (e) {
     console.error('Failed to initialize Firebase services.', e);
   }
@@ -37,4 +43,5 @@ if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
   );
 }
 
-export { app, database, firestore };
+
+export { app, database, firestore, analytics };
