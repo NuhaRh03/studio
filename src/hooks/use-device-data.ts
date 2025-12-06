@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { database } from '@/lib/firebase';
-import { ref, onChildAdded, query, limitToLast, off, get } from 'firebase/database';
+import { firestore } from '@/lib/firebase';
+import { collection, query, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import type { DevicePythonDataPoint } from '@/types';
 import { useAuth } from './use-auth';
 
@@ -31,7 +31,7 @@ function generateMockDataPoint(lastPoint?: DevicePythonDataPoint): DevicePythonD
   };
 }
 
-export function useDeviceData(limit: number): DevicePythonDataPoint[] {
+export function useDeviceData(pointsLimit: number): DevicePythonDataPoint[] {
   const { user } = useAuth();
   const [data, setData] = useState<DevicePythonDataPoint[]>([]);
   const dataRef = useRef(data);
@@ -39,11 +39,11 @@ export function useDeviceData(limit: number): DevicePythonDataPoint[] {
 
   useEffect(() => {
     // If Firebase is not configured, use mock data
-    if (!database) {
+    if (!firestore) {
       console.warn('Firebase not configured. Using mock data stream.');
       const interval = setInterval(() => {
         const newPoint = generateMockDataPoint(dataRef.current[dataRef.current.length - 1]);
-        setData(prev => [...prev, newPoint].slice(-limit));
+        setData(prev => [...prev, newPoint].slice(-pointsLimit));
       }, 2000);
       return () => clearInterval(interval);
     }
@@ -53,50 +53,42 @@ export function useDeviceData(limit: number): DevicePythonDataPoint[] {
         return;
     }
 
-    // Use user's UID to reference their device data
-    const deviceId = user.uid;
-    const deviceRef = ref(database, `devices/${deviceId}`);
-    const dataQuery = query(deviceRef, limitToLast(limit));
-    let initialDataLoaded = false;
+    const dataCollectionRef = collection(firestore, 'users', user.uid, 'realtime_data');
+    const q = query(dataCollectionRef, orderBy('ts', 'desc'), limit(pointsLimit));
 
-    const handleNewData = (snapshot: any) => {
-      if (!snapshot.exists()) return;
-      const value = snapshot.val();
-      const id = snapshot.key as string;
-      const newDataPoint: DevicePythonDataPoint = { id, ...value };
-      
-      setData(prevData => {
-        if (prevData.some(p => p.id === id)) return prevData;
-        const newState = [...prevData, newDataPoint];
-        return newState.length > limit ? newState.slice(newState.length - limit) : newState;
-      });
-    };
-
-    get(dataQuery).then((snapshot) => {
-        const initialData: DevicePythonDataPoint[] = [];
-        if (snapshot.exists()) {
-            snapshot.forEach((childSnapshot) => {
-                const id = childSnapshot.key as string;
-                const value = childSnapshot.val();
-                initialData.push({ id, ...value });
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const points: DevicePythonDataPoint[] = [];
+        querySnapshot.forEach((doc) => {
+            const docData = doc.data();
+            points.push({
+                id: doc.id,
+                ax: docData.ax ?? 0,
+                ay: docData.ay ?? 0,
+                az: docData.az ?? 0,
+                gx: docData.gx ?? 0,
+                gy: docData.gy ?? 0,
+                gz: docData.gz ?? 0,
+                delta: docData.delta,
+                theta: docData.theta,
+                lowAlpha: docData.lowAlpha,
+                highAlpha: docData.highAlpha,
+                highBeta: docData.highBeta,
+                highGamma: docData.highGamma,
+                heartRate: docData.heartRate,
+                temperature: docData.temperature ?? 36.8, // Add mock temp if not present
+                timestamp: docData.ts, // Map `ts` from firestore to `timestamp`
             });
-            setData(initialData);
-        }
-        initialDataLoaded = true;
-
-        onChildAdded(query(deviceRef, limitToLast(1)), (snapshot) => {
-            if (initialDataLoaded && !dataRef.current.some(p => p.id === snapshot.key)) {
-                handleNewData(snapshot);
-            }
         });
+        // Reverse to have oldest first for charts
+        setData(points.reverse());
+    }, (error) => {
+        console.error("Error fetching device data from Firestore:", error);
     });
 
     return () => {
-      if(dataQuery) {
-        off(dataQuery);
-      }
+      unsubscribe();
     };
-  }, [limit, user]);
+  }, [pointsLimit, user]);
 
   return data;
 }

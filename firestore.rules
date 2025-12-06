@@ -4,11 +4,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Allow users to read their own data from the 'data' subcollection.
-    // The {userId} wildcard must match the uid of the authenticated user.
-    match /devices/{userId}/data/{docId} {
+    // Allow users to read their own main document
+    match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false; // Keep writes restricted.
+      // Allow writes only from your backend script, not the app
+      allow write: if false; 
+    }
+
+    // Allow users to read from their own 'realtime_data' subcollection.
+    match /users/{userId}/realtime_data/{docId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Writes should only come from your Python script, so deny client writes.
+      allow write: if false;
     }
 
     // Allow authenticated users to read predictions.

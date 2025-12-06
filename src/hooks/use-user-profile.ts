@@ -14,7 +14,7 @@ export interface UserProfile {
     job: string;
 }
 
-const USER_COLLECTION = 'devices';
+const USER_COLLECTION = 'users';
 
 export function useUserProfile() {
   const { user } = useAuth();
@@ -34,11 +34,22 @@ export function useUserProfile() {
         return;
     }
 
-    const docRef = doc(firestore, USER_COLLECTION, user.uid, 'data', 'realtime_data');
+    // The user document itself contains the profile info.
+    const docRef = doc(firestore, USER_COLLECTION, user.uid);
     
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
-        setProfile(docSnap.data() as UserProfile);
+        const data = docSnap.data();
+        // Assuming your python script might set more than just profile data
+        // It's safer to construct the profile object.
+        setProfile({
+          name: data.name || 'N/A',
+          email: user.email || 'N/A',
+          age: data.age || 0,
+          height_cm: data.height_cm || 0,
+          weight_kg: data.weight_kg || 0,
+          job: data.job || 'N/A'
+        });
       } else {
         console.log("No such document at path:", docRef.path);
         setProfile(null);
