@@ -4,16 +4,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Allow users to read their own main document
+    // Allow any authenticated user to read user documents for this demo.
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      // Allow writes only from your backend script, not the app
+      allow read: if request.auth != null;
+      // Writes should only come from your backend script, so deny client writes.
       allow write: if false; 
     }
 
-    // Allow users to read from their own 'realtime_data' subcollection.
+    // Allow any authenticated user to read from the 'realtime_data' subcollection.
     match /users/{userId}/realtime_data/{docId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null;
       // Writes should only come from your Python script, so deny client writes.
       allow write: if false;
     }
