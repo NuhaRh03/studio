@@ -18,7 +18,7 @@ import { Logo } from '@/components/icons';
 import { Home, BarChart3, ShieldAlert, FileText, Settings, LogOut, Siren } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { PredictionListener } from './prediction-listener';
@@ -79,7 +79,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <nav className="grid gap-6 text-lg font-medium">
                 <Link href="/" className="flex items-center gap-2 text-lg font-semibold mb-4" onClick={() => setOpen(false)}>
                   <Logo className="h-6 w-6 text-primary" />
-                  <span className="">BioMind Insights</span>
+                  <span className="">Mindora</span>
                 </Link>
                 {navItems.map((item) => (
                   <Link
@@ -126,7 +126,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </Sheet>
           <div className='flex items-center gap-2 font-semibold'>
              <Logo className="h-6 w-6 text-primary" />
-             <span className="hidden md:inline">BioMind Insights</span>
+             <span className="hidden md:inline">Mindora</span>
           </div>
           <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4 justify-end">
             <ThemeToggle />
@@ -146,7 +146,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <Sidebar className="border-r flex flex-col">
           <SidebarHeader className="flex items-center gap-2 p-4">
             <Logo className="h-7 w-7 text-primary" />
-            <span className="text-lg font-semibold whitespace-nowrap">BioMind Insights</span>
+            <span className="text-lg font-semibold whitespace-nowrap">Mindora</span>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>

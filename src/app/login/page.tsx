@@ -50,7 +50,7 @@ export default function LoginPage() {
             <div className="flex justify-center items-center mb-4">
                 <Logo className="h-8 w-8 text-primary" />
             </div>
-          <CardTitle className="text-2xl">BioMind Insights</CardTitle>
+          <CardTitle className="text-2xl">Mindora</CardTitle>
           <CardDescription>
             Enter your credentials to access your dashboard.
           </CardDescription>
