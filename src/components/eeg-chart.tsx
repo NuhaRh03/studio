@@ -1,21 +1,30 @@
 'use client';
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import type { DevicePythonDataPoint } from '@/types';
-import { ChartTooltipContent } from './ui/chart';
+import { ChartTooltipContent, ChartContainer, type ChartConfig } from './ui/chart';
 
 interface EegChartProps {
   data: DevicePythonDataPoint[];
 }
 
 const eegBands = [
-  { key: 'delta', color: '#1f77b4' },
-  { key: 'theta', color: '#ff7f0e' },
-  { key: 'lowAlpha', color: '#2ca02c', name: 'Low Alpha' },
-  { key: 'highAlpha', color: '#d62728', name: 'High Alpha' },
-  { key: 'highBeta', color: '#9467bd', name: 'High Beta' },
-  { key: 'highGamma', color: '#8c564b', name: 'High Gamma' },
+  { key: 'delta', color: '#1f77b4', label: 'Delta' },
+  { key: 'theta', color: '#ff7f0e', label: 'Theta' },
+  { key: 'lowAlpha', color: '#2ca02c', label: 'Low Alpha' },
+  { key: 'highAlpha', color: '#d62728', label: 'High Alpha' },
+  { key: 'highBeta', color: '#9467bd', label: 'High Beta' },
+  { key: 'highGamma', color: '#8c564b', label: 'High Gamma' },
 ];
+
+const chartConfig = eegBands.reduce((acc, band) => {
+  acc[band.key] = {
+    label: band.label,
+    color: band.color,
+  };
+  return acc;
+}, {} as ChartConfig);
+
 
 export default function EegChart({ data }: EegChartProps) {
   const chartData = data.map(d => ({
@@ -24,8 +33,8 @@ export default function EegChart({ data }: EegChartProps) {
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={chartData}>
+    <ChartContainer config={chartConfig} className="w-full h-[300px]">
+      <LineChart data={chartData} accessibilityLayer>
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
         <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
@@ -39,13 +48,13 @@ export default function EegChart({ data }: EegChartProps) {
             key={band.key}
             type="monotone"
             dataKey={band.key}
-            name={band.name ?? band.key.charAt(0).toUpperCase() + band.key.slice(1)}
+            name={band.label}
             stroke={band.color}
             strokeWidth={2}
             dot={false}
           />
         ))}
       </LineChart>
-    </ResponsiveContainer>
+    </ChartContainer>
   );
 }
