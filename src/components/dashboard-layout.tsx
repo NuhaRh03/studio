@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/icons';
-import { Home, BarChart3, ShieldAlert, FileText, Settings, LogOut } from 'lucide-react';
+import { Home, BarChart3, ShieldAlert, FileText, Settings, LogOut, Siren } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -28,6 +28,7 @@ const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
   { href: '/sleep-stress', icon: BarChart3, label: 'Sleep & Stress' },
   { href: '/risk-prediction', icon: ShieldAlert, label: 'Risk Prediction' },
+  { href: '/alerts', icon: Siren, label: 'Alerts' },
   { href: '/report', icon: FileText, label: 'Session Report' },
 ];
 
