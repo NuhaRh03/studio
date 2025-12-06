@@ -3,13 +3,46 @@
 import React, { useState, useMemo } from 'react';
 import { useDeviceData } from '@/hooks/use-device-data';
 import { Button } from '@/components/ui/button';
-import { generateSessionReport, GenerateSessionReportOutput } from '@/ai/flows/generate-session-report';
-import { analyzeSleepPatterns } from '@/ai/flows/analyze-sleep-patterns';
-import { computeStressLevel } from '@/lib/metrics';
+import { computeStressLevel, analyzeSleepPatterns } from '@/lib/metrics';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, FileDown, Brain, Heart, Activity, SmilePlus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+
+// Mock report output type
+export type GenerateSessionReportOutput = {
+  brainActivitySummary: string;
+  heartAndTemperatureSummary: string;
+  stressAndSleepSummary: string;
+  sentimentAndEmotionalTrend: string;
+  finalConclusion: string;
+  recommendations: string;
+};
+
+// Mock report generation
+async function generateSessionReport(
+  input: any
+): Promise<GenerateSessionReportOutput> {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1500));
+
+  return {
+    brainActivitySummary: `Brain activity shows a predominance of alpha waves, suggesting a relaxed state for about 60% of the session. There were brief periods of higher beta activity, indicating focused attention.`,
+    heartAndTemperatureSummary: `Heart rate was stable, averaging ${input.averageHeartRate.toFixed(
+      0
+    )} bpm. The range from ${input.minHeartRate.toFixed(0)} to ${input.maxHeartRate.toFixed(
+      0
+    )} bpm is within healthy limits for a resting state.`,
+    stressAndSleepSummary: `The average stress level was low at ${input.averageStressLevel.toFixed(
+      0
+    )}%. The majority of the session was spent in an 'Awake' and relaxed state.`,
+    sentimentAndEmotionalTrend: `Sentiment remained neutral throughout the session, with no significant emotional fluctuations detected.`,
+    finalConclusion: `This was a calm and stable session, reflecting a good state of wellness. Key indicators for stress and physical health are all within optimal ranges.`,
+    recommendations:
+      '- Continue with current mindfulness or relaxation practices.\n- Ensure consistent sleep schedule to maintain low stress levels.\n- Monitor for any sharp increases in beta waves, which could indicate rising stress.',
+  };
+}
+
 
 export default function ReportPage() {
   // Get the last 10 minutes of data (assuming 1 point every 2 seconds)
@@ -50,11 +83,9 @@ export default function ReportPage() {
     setIsGenerating(true);
     setReport(null);
     try {
-      const sleepAnalyses = await Promise.all(
-        sessionData.dataForSleepAnalysis.map(dp => analyzeSleepPatterns(dp).catch(() => null))
-      );
+      const sleepAnalyses = sessionData.dataForSleepAnalysis.map(dp => analyzeSleepPatterns(dp));
       
-      const sleepCases = sleepAnalyses.filter(Boolean).map(sa => sa!.sleepCase);
+      const sleepCases = sleepAnalyses.map(sa => sa!.case);
       const timeInStates = sleepCases.reduce((acc, c) => {
         acc[c] = (acc[c] || 0) + 2; // Assuming 2 seconds per data point
         return acc;
@@ -86,7 +117,7 @@ export default function ReportPage() {
         <div>
             <h2 className="text-3xl font-bold tracking-tight">Session Report</h2>
             <p className="text-muted-foreground">
-                Generate an AI-powered summary of your recent activity.
+                Generate a summary of your recent activity.
             </p>
         </div>
         <Button onClick={handleGenerateReport} disabled={isGenerating || !canGenerate}>

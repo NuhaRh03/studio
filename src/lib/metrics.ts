@@ -65,3 +65,52 @@ export function getTempState(temperature: number): { label: string; color: strin
   if (temperature > 37.2) return { label: 'Slightly Elevated', color: 'text-yellow-500' };
   return { label: 'Normal', color: 'text-green-500' };
 }
+
+
+// Sleep Analysis
+export function analyzeSleepPatterns(data: Omit<DevicePythonDataPoint, 'id' | 'timestamp' | 'ax' | 'ay' | 'az' | 'gx' | 'gy' | 'gz' | 'heartRate' | 'temperature'>): { level: number; case: string } {
+    const { delta, theta, lowAlpha, highAlpha, highBeta, highGamma } = data;
+
+    const sleepinessScore = (delta * 0.4) + (theta * 0.3) - (highBeta * 0.15) - (highGamma * 0.15);
+    const sleepLevel = Math.min(100, Math.max(0, sleepinessScore));
+
+    let sleepCase = 'Awake';
+    if (sleepLevel > 75) {
+        sleepCase = 'Possible microsleep risk';
+    } else if (sleepLevel > 50) {
+        sleepCase = 'Very sleepy';
+    } else if (sleepLevel > 25) {
+        sleepCase = 'Drowsy';
+    }
+
+    return { level: Math.round(sleepLevel), case: sleepCase };
+}
+
+
+// Risk Explanation
+export function explainRiskLevels(data: DevicePythonDataPoint & {headacheRisk: number, migraineRisk: number}): { explanation: string } {
+    const { headacheRisk, migraineRisk, heartRate, theta, lowAlpha, highBeta, highGamma } = data;
+    
+    let explanation = `Your current risk levels have been calculated based on your biosignals.\n\n`;
+
+    if (headacheRisk > 33) {
+        explanation += `The headache risk of ${headacheRisk.toFixed(0)}% is elevated. `;
+        if (theta > 20) explanation += `Elevated theta waves are a contributing factor. `;
+        if (lowAlpha < 15) explanation += `Lower alpha waves are also playing a role. `;
+        if (heartRate > 85) explanation += `A slightly increased heart rate is also a contributor. `;
+    } else {
+        explanation += `Your headache risk is low, which is great. `;
+    }
+
+    explanation += `\n`;
+
+    if (migraineRisk > 33) {
+        explanation += `The migraine risk of ${migraineRisk.toFixed(0)}% is elevated. `;
+        if (highBeta > 10) explanation += `Increased high-beta wave activity is a key indicator. `;
+        if (highGamma > 8) explanation += `High-gamma waves are also higher than usual. `;
+    } else {
+        explanation += `Your migraine risk is also low. `;
+    }
+
+    return { explanation };
+}

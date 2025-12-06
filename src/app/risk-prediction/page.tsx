@@ -2,12 +2,11 @@
 
 import React, { useMemo, useState } from 'react';
 import { useDeviceData } from '@/hooks/use-device-data';
-import { computeHeadacheRisk, computeMigraineRisk } from '@/lib/metrics';
+import { computeHeadacheRisk, computeMigraineRisk, explainRiskLevels } from '@/lib/metrics';
 import RiskGauge from '@/components/risk-gauge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import HistoricalChart from '@/components/historical-chart';
 import { Button } from '@/components/ui/button';
-import { explainRiskLevels } from '@/ai/flows/explain-risk-levels';
 import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -45,18 +44,13 @@ export default function RiskPredictionPage() {
     setIsExplaining(true);
     setExplanation('');
     try {
-      const result = await explainRiskLevels({
-        delta: latestData.delta,
-        theta: latestData.theta,
-        lowAlpha: latestData.lowAlpha,
-        highAlpha: latestData.highAlpha,
-        highBeta: latestData.highBeta,
-        highGamma: latestData.highGamma,
-        heartRate: latestData.heartRate,
-        headacheRisk: latestRisks.headache.risk,
-        migraineRisk: latestRisks.migraine.risk,
-      });
-      setExplanation(result.explanation);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate async
+        const result = explainRiskLevels({
+            ...latestData,
+            headacheRisk: latestRisks.headache.risk,
+            migraineRisk: latestRisks.migraine.risk
+        });
+        setExplanation(result.explanation);
     } catch (error) {
       console.error('Error explaining risk levels:', error);
       setExplanation('Could not generate an explanation at this time.');
@@ -91,7 +85,7 @@ export default function RiskPredictionPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Risk Explanation</CardTitle>
-            <CardDescription>Get an AI-powered explanation for your current risk levels.</CardDescription>
+            <CardDescription>Get an explanation for your current risk levels.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={handleExplainRisk} disabled={isExplaining}>

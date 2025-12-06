@@ -3,57 +3,33 @@
 import React, { useMemo } from 'react';
 import { useDeviceData } from '@/hooks/use-device-data';
 import HistoricalChart from '@/components/historical-chart';
-import { computeStressLevel } from '@/lib/metrics';
+import { computeStressLevel, analyzeSleepPatterns } from '@/lib/metrics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { analyzeSleepPatterns } from '@/ai/flows/analyze-sleep-patterns';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, CartesianAxis } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SleepStressPage() {
   const dataPoints = useDeviceData(300); // Fetch more data for historical view
-  const [sleepData, setSleepData] = React.useState<Array<{ sleepLevel: number; sleepCase: string }>>([]);
-  const [isAnalyzing, setIsAnalyzing] = React.useState(false);
-
-  React.useEffect(() => {
-    const analyzeAll = async () => {
-      if (dataPoints.length > 0 && !isAnalyzing) {
-        setIsAnalyzing(true);
-        const analyses = await Promise.all(
-          dataPoints.map(dp =>
-            analyzeSleepPatterns({
-              delta: dp.delta,
-              theta: dp.theta,
-              lowAlpha: dp.lowAlpha,
-              highAlpha: dp.highAlpha,
-              highBeta: dp.highBeta,
-              highGamma: dp.highGamma,
-            }).catch(e => ({ sleepLevel: 0, sleepCase: 'Error' }))
-          )
-        );
-        setSleepData(analyses);
-        setIsAnalyzing(false);
-      }
-    };
-    analyzeAll();
-  }, [dataPoints, isAnalyzing]);
 
   const { stressChartData, sleepChartData, sleepCaseDistribution, avgStress } = useMemo(() => {
     const stressData = dataPoints.map(dp => ({
       time: new Date(dp.timestamp * 1000).toLocaleTimeString(),
       value: computeStressLevel(dp.heartRate, dp.highBeta, dp.highGamma).level,
     }));
+    
+    const sleepAnalyses = dataPoints.map(dp => analyzeSleepPatterns(dp));
 
     const sleepDataMapped = dataPoints.map((dp, i) => ({
       time: new Date(dp.timestamp * 1000).toLocaleTimeString(),
-      value: sleepData[i]?.sleepLevel ?? 0,
+      value: sleepAnalyses[i]?.level ?? 0,
     }));
 
-    const distribution = (sleepData || []).reduce((acc, curr) => {
-      acc[curr.sleepCase] = (acc[curr.sleepCase] || 0) + 1;
+    const distribution = (sleepAnalyses || []).reduce((acc, curr) => {
+      acc[curr.case] = (acc[curr.case] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    const total = sleepData.length;
+    const total = sleepAnalyses.length;
     const sleepCaseDist = Object.entries(distribution).map(([name, value]) => ({
       name,
       value: (value / total) * 100,
@@ -67,7 +43,7 @@ export default function SleepStressPage() {
       sleepCaseDistribution: sleepCaseDist,
       avgStress: averageStress,
     };
-  }, [dataPoints, sleepData]);
+  }, [dataPoints]);
 
   const heartRateChartData = useMemo(() =>
     dataPoints.map(dp => ({
@@ -93,7 +69,7 @@ export default function SleepStressPage() {
             <CardTitle>Sleep Stage Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            {isAnalyzing && sleepCaseDistribution.length === 0 ? <Skeleton className="h-[250px] w-full"/> : 
+            {dataPoints.length === 0 ? <Skeleton className="h-[250px] w-full"/> : 
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={sleepCaseDistribution} layout="vertical" margin={{ left: 30 }}>
                 <CartesianGrid strokeDasharray="3 3" />

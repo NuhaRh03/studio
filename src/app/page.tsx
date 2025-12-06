@@ -6,44 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import MetricCard from '@/components/metric-card';
 import EegChart from '@/components/eeg-chart';
 import RiskGauge from '@/components/risk-gauge';
-import { computeHeadacheRisk, computeMigraineRisk, computeStressLevel, getHeartHealthState, getTempState } from '@/lib/metrics';
+import { computeHeadacheRisk, computeMigraineRisk, computeStressLevel, getHeartHealthState, getTempState, analyzeSleepPatterns } from '@/lib/metrics';
 import { HeartPulse, Thermometer, BrainCircuit, Smile, Activity } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { analyzeSleepPatterns } from '@/ai/flows/analyze-sleep-patterns';
 
 export default function DashboardPage() {
   const dataPoints = useDeviceData(120);
-  const [sleepInfo, setSleepInfo] = React.useState<{ level: number; case: string } | null>(null);
-  const [isAnalyzingSleep, setIsAnalyzingSleep] = React.useState(false);
 
   const latestData = useMemo(() => (dataPoints.length > 0 ? dataPoints[dataPoints.length - 1] : null), [dataPoints]);
 
-  React.useEffect(() => {
-    if (latestData && !isAnalyzingSleep) {
-      const analyze = async () => {
-        setIsAnalyzingSleep(true);
-        try {
-          const result = await analyzeSleepPatterns({
-            delta: latestData.delta,
-            theta: latestData.theta,
-            lowAlpha: latestData.lowAlpha,
-            highAlpha: latestData.highAlpha,
-            highBeta: latestData.highBeta,
-            highGamma: latestData.highGamma,
-          });
-          setSleepInfo({ level: result.sleepLevel, case: result.sleepCase });
-        } catch (error) {
-          console.error('Error analyzing sleep patterns:', error);
-          setSleepInfo(null);
-        } finally {
-          setIsAnalyzingSleep(false);
-        }
-      };
-      analyze();
-    }
-  }, [latestData, isAnalyzingSleep]);
-
-  const { headacheRisk, migraineRisk, stressLevel, heartState, tempState, sentiment } = useMemo(() => {
+  const { headacheRisk, migraineRisk, stressLevel, heartState, tempState, sentiment, sleepInfo } = useMemo(() => {
     if (!latestData) {
       return {
         headacheRisk: { risk: 0, label: 'Low' },
@@ -52,6 +24,7 @@ export default function DashboardPage() {
         heartState: { label: 'Normal', color: 'text-green-500' },
         tempState: { label: 'Normal', color: 'text-green-500' },
         sentiment: { level: 50, label: 'Neutral' },
+        sleepInfo: { level: 0, case: 'Awake' },
       };
     }
     return {
@@ -61,6 +34,7 @@ export default function DashboardPage() {
       heartState: getHeartHealthState(latestData.heartRate),
       tempState: getTempState(latestData.temperature),
       sentiment: { level: 50, label: 'Neutral' }, // Placeholder for sentiment
+      sleepInfo: analyzeSleepPatterns(latestData),
     };
   }, [latestData]);
 
